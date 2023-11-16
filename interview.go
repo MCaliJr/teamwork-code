@@ -55,6 +55,7 @@ func readCSV(filename string) ([][]string, error) {
 	return records, nil
 }
 
+// count email domains using concurrency for faster execution
 func countEmailDomains(records [][]string) (map[string]int, error) {
 	if len(records) == 0 {
 			return nil, errors.New("no records provided")
