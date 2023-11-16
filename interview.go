@@ -48,7 +48,7 @@ func readCSV(filename string) ([][]string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scanner error in readCSV: %w", err)
 	}
 
 	wg.Wait()
@@ -63,7 +63,7 @@ func countEmailDomains(records [][]string) (map[string]int, error) {
 
 	emailColumn, err := findEmailColumn(records[0])
 	if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error finding email column: %w", err)
 	}
 
 	var wg sync.WaitGroup
@@ -121,7 +121,7 @@ func sortAndSave(domainCounts map[string]int, filename string) error {
 
 	file, err := os.Create(filename)
 	if err != nil {
-			return err
+		return fmt.Errorf("error creating output file: %w", err)
 	}
 	defer file.Close()
 
@@ -134,8 +134,12 @@ func sortAndSave(domainCounts map[string]int, filename string) error {
 					return err
 			}
 	}
+	
+	if err := buffer.Flush(); err != nil {
+		return fmt.Errorf("error flushing buffer to file: %w", err)
+	}
 
-	return buffer.Flush()
+	return nil
 }
 
 func ProcessCustomers(inputFile, outputFile string) error {
