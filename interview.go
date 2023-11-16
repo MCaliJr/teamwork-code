@@ -65,19 +65,31 @@ func countEmailDomains(records [][]string) (map[string]int, error) {
 			return nil, err
 	}
 
+	var wg sync.WaitGroup
 	domainCounts := make(map[string]int)
+	mutex := &sync.Mutex{}
+
 	for _, record := range records {
-			if len(record) <= emailColumn {
-					continue // skip row without email data
-			}
-			email := record[emailColumn]
-			parts := strings.Split(email, "@")
-			if len(parts) != 2 {
-					continue // skip malformed email addresses
-			}
-			domain := parts[1]
-			domainCounts[domain]++
+			wg.Add(1)
+			go func(rec []string) {
+					defer wg.Done()
+					if len(rec) <= emailColumn {
+							return
+					}
+					email := rec[emailColumn]
+					parts := strings.Split(email, "@")
+					if len(parts) != 2 {
+							return
+					}
+					domain := parts[1]
+
+					mutex.Lock()
+					domainCounts[domain]++
+					mutex.Unlock()
+			}(record)
 	}
+
+	wg.Wait()
 	return domainCounts, nil
 }
 
