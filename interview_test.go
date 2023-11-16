@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -117,5 +118,59 @@ func TestSaveToFile(t *testing.T) {
 			if joinedLine != expectedLines[i] {
 					t.Errorf("Line %d of file is incorrect, got: %s, want: %s", i, joinedLine, expectedLines[i])
 			}
+	}
+}
+
+func TestProcessCustomers(t *testing.T) {
+	inputCSV := "test_customers.csv"
+	outputCSV := "test_output.csv"
+
+	// Expected result based on the provided input
+	expectedDomainCounts := []DomainCount{
+			{Domain: "github.io", Count: 1},
+			{Domain: "faceSmile.net", Count: 1},
+			{Domain: "cyberchimps.com", Count: 1},
+			{Domain: "hubpages.com", Count: 1},
+	}
+
+	// Test without saving to file
+	result, err := ProcessCustomers(inputCSV)
+	if err != nil {
+			t.Fatalf("ProcessCustomers without file saving returned an error: %v", err)
+	}
+	if !reflect.DeepEqual(result, expectedDomainCounts) {
+			t.Errorf("ProcessCustomers without file saving returned %v, expected %v", result, expectedDomainCounts)
+	}
+
+	// Test with saving to file
+	_, err = ProcessCustomers(inputCSV, outputCSV)
+	if err != nil {
+			t.Fatalf("ProcessCustomers with file saving returned an error: %v", err)
+	}
+
+	// Verify the file content
+	file, err := os.Open(outputCSV)
+	if err != nil {
+			t.Fatalf("Failed to open the output file: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	lines, err := reader.ReadAll()
+	if err != nil {
+			t.Fatalf("Failed to read from the output file: %v", err)
+	}
+
+	// Validate each line in the output file
+	for i, line := range lines {
+			expectedLine := expectedDomainCounts[i].Domain + "," + strconv.Itoa(expectedDomainCounts[i].Count)
+			joinedLine := strings.Join(line, ",")
+			if joinedLine != expectedLine {
+					t.Errorf("Line %d of output file is incorrect, got: %s, want: %s", i, joinedLine, expectedLine)
+			}
+	}
+
+	if len(lines) > len(expectedDomainCounts) {
+			t.Errorf("Output file has more lines (%d) than expected (%d)", len(lines), len(expectedDomainCounts))
 	}
 }
