@@ -2,10 +2,10 @@ package customerimporter
 
 import (
 	"encoding/csv"
-	"reflect"
-	"testing"
-	"strings"
 	"os"
+	"reflect"
+	"strings"
+	"testing"
 )
 
 func TestReadCSV(t *testing.T) {

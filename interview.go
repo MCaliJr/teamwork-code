@@ -8,13 +8,13 @@ package customerimporter
 import (
 	"bufio"
 	"encoding/csv"
-	"os"
-	"sync"
-	"strings"
 	"errors"
+	"fmt"
+	"os"
 	"sort"
 	"strconv"
-	"fmt"
+	"strings"
+	"sync"
 )
 
 // read data from a CSV file using concurrency for faster read time
