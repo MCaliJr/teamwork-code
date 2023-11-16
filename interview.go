@@ -125,7 +125,8 @@ func sortAndSave(domainCounts map[string]int, filename string) error {
 	}
 	defer file.Close()
 
-	writer := csv.NewWriter(file)
+	buffer := bufio.NewWriter(file)
+	writer := csv.NewWriter(buffer)
 	defer writer.Flush()
 
 	for _, dc := range counts {
@@ -134,7 +135,7 @@ func sortAndSave(domainCounts map[string]int, filename string) error {
 			}
 	}
 
-	return nil
+	return buffer.Flush()
 }
 
 func ProcessCustomers(inputFile, outputFile string) error {
