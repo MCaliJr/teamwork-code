@@ -71,9 +71,9 @@ func TestSortDomains(t *testing.T) {
 			"faceSmile.net": 7,
 	}
 	expected := []DomainCount{
+			{Domain: "cyberchimps.com", Count: 2},
 			{Domain: "faceSmile.net", Count: 7},
 			{Domain: "github.io", Count: 5},
-			{Domain: "cyberchimps.com", Count: 2},
 	}
 
 	result := sortDomains(domainCounts)
@@ -127,9 +127,9 @@ func TestProcessCustomers(t *testing.T) {
 
 	// Expected result based on the provided input
 	expectedDomainCounts := []DomainCount{
-			{Domain: "github.io", Count: 1},
-			{Domain: "faceSmile.net", Count: 1},
 			{Domain: "cyberchimps.com", Count: 1},
+			{Domain: "faceSmile.net", Count: 1},
+			{Domain: "github.io", Count: 1},
 			{Domain: "hubpages.com", Count: 1},
 	}
 

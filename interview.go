@@ -119,7 +119,7 @@ type DomainCount struct {
 	Count  int
 }
 
-// sortDomains sorts the domain counts and returns them in a sorted slice of DomainCount.
+// sortDomains sorts the domain counts alphabetically by domain name and returns them in a sorted slice of DomainCount.
 func sortDomains(domainCounts map[string]int) []DomainCount {
 	var counts []DomainCount
 	for domain, count := range domainCounts {
@@ -127,7 +127,7 @@ func sortDomains(domainCounts map[string]int) []DomainCount {
 	}
 
 	sort.Slice(counts, func(i, j int) bool {
-			return counts[i].Count > counts[j].Count // desc order
+			return counts[i].Domain < counts[j].Domain // alphabetical order
 	})
 
 	return counts
