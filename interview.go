@@ -11,6 +11,7 @@ import (
 	"os"
 	"sync"
 	"strings"
+	"errors"
 )
 
 // read data from a CSV file using concurrency for faster read time
@@ -49,4 +50,40 @@ func readCSV(filename string) ([][]string, error) {
 
 	wg.Wait()
 	return records, nil
+}
+
+func countEmailDomains(records [][]string) (map[string]int, error) {
+	if len(records) == 0 {
+			return nil, errors.New("no records provided")
+	}
+
+	emailColumn, err := findEmailColumn(records[0])
+	if err != nil {
+			return nil, err
+	}
+
+	domainCounts := make(map[string]int)
+	for _, record := range records {
+			if len(record) <= emailColumn {
+					continue // skip row without email data
+			}
+			email := record[emailColumn]
+			parts := strings.Split(email, "@")
+			if len(parts) != 2 {
+					continue // skip malformed email addresses
+			}
+			domain := parts[1]
+			domainCounts[domain]++
+	}
+	return domainCounts, nil
+}
+
+// identify the index of email column
+func findEmailColumn(record []string) (int, error) {
+	for i, field := range record {
+			if strings.Contains(field, "@") || strings.ToLower(field) == "email" {
+					return i, nil
+			}
+	}
+	return -1, errors.New("email column not found")
 }
