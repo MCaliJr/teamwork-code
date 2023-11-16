@@ -12,6 +12,9 @@ import (
 	"sync"
 	"strings"
 	"errors"
+	"sort"
+	"strconv"
+	"fmt"
 )
 
 // read data from a CSV file using concurrency for faster read time
@@ -86,4 +89,55 @@ func findEmailColumn(record []string) (int, error) {
 			}
 	}
 	return -1, errors.New("email column not found")
+}
+
+type DomainCount struct {
+	Domain string
+	Count  int
+}
+
+func sortAndSave(domainCounts map[string]int, filename string) error {
+	var counts []DomainCount
+	for domain, count := range domainCounts {
+			counts = append(counts, DomainCount{Domain: domain, Count: count})
+	}
+
+	sort.Slice(counts, func(i, j int) bool {
+			return counts[i].Count > counts[j].Count // desc order
+	})
+
+	file, err := os.Create(filename)
+	if err != nil {
+			return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	for _, dc := range counts {
+			if err := writer.Write([]string{dc.Domain, strconv.Itoa(dc.Count)}); err != nil {
+					return err
+			}
+	}
+
+	return nil
+}
+
+func ProcessCustomers(inputFile, outputFile string) error {
+	records, err := readCSV(inputFile)
+	if err != nil {
+			return fmt.Errorf("failed to read CSV: %w", err)
+	}
+
+	domainCounts, err := countEmailDomains(records)
+	if err != nil {
+			return fmt.Errorf("failed to count email domains: %w", err)
+	}
+
+	if err := sortAndSave(domainCounts, outputFile); err != nil {
+			return fmt.Errorf("failed to sort and save domains: %w", err)
+	}
+
+	return nil
 }

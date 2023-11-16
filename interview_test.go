@@ -1,9 +1,11 @@
 package customerimporter
 
 import (
-    "reflect"
-    "testing"
-		"strings"
+	"encoding/csv"
+	"reflect"
+	"testing"
+	"strings"
+	"os"
 )
 
 func TestReadCSV(t *testing.T) {
@@ -55,8 +57,47 @@ func TestCountEmailDomains(t *testing.T) {
 	if err != nil {
 			t.Fatalf("countEmailDomains returned an error: %v", err)
 	}
-	
+
 	if !reflect.DeepEqual(result, expected) {
 			t.Errorf("countEmailDomains returned %v, expected %v", result, expected)
+	}
+}
+
+func TestSortAndSave(t *testing.T) {
+	domainCounts := map[string]int{
+			"github.io": 5,
+			"cyberchimps.com": 2,
+			"faceSmile.net": 7,
+	}
+	filename := "test_sorted_domains.csv"
+
+	if err := sortAndSave(domainCounts, filename); err != nil {
+			t.Fatalf("sortAndSave returned an error: %v", err)
+	}
+
+	// Check saved file content
+	file, err := os.Open(filename)
+	if err != nil {
+			t.Fatalf("Failed to open the file: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	lines, err := reader.ReadAll()
+	if err != nil {
+			t.Fatalf("Failed to read from the file: %v", err)
+	}
+
+	expectedLines := []string{
+			"faceSmile.net,7",
+			"github.io,5",
+			"cyberchimps.com,2",
+	}
+
+	for i, line := range lines {
+			joinedLine := strings.Join(line, ",")
+			if joinedLine != expectedLines[i] {
+					t.Errorf("Line %d of file is incorrect, got: %s, want: %s", i, joinedLine, expectedLines[i])
+			}
 	}
 }
