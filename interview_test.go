@@ -63,19 +63,37 @@ func TestCountEmailDomains(t *testing.T) {
 	}
 }
 
-func TestSortAndSave(t *testing.T) {
+func TestSortDomains(t *testing.T) {
 	domainCounts := map[string]int{
 			"github.io": 5,
 			"cyberchimps.com": 2,
 			"faceSmile.net": 7,
 	}
-	filename := "test_sorted_domains.csv"
-
-	if err := sortAndSave(domainCounts, filename); err != nil {
-			t.Fatalf("sortAndSave returned an error: %v", err)
+	expected := []DomainCount{
+			{Domain: "faceSmile.net", Count: 7},
+			{Domain: "github.io", Count: 5},
+			{Domain: "cyberchimps.com", Count: 2},
 	}
 
-	// Check saved file content
+	result := sortDomains(domainCounts)
+	if !reflect.DeepEqual(result, expected) {
+			t.Errorf("sortDomains returned %v, expected %v", result, expected)
+	}
+}
+
+func TestSaveToFile(t *testing.T) {
+	sortedDomains := []DomainCount{
+			{Domain: "faceSmile.net", Count: 7},
+			{Domain: "github.io", Count: 5},
+			{Domain: "cyberchimps.com", Count: 2},
+	}
+	filename := "test_save_to_file.csv"
+
+	if err := saveToFile(sortedDomains, filename); err != nil {
+			t.Fatalf("saveToFile returned an error: %v", err)
+	}
+
+	// Verify the file content
 	file, err := os.Open(filename)
 	if err != nil {
 			t.Fatalf("Failed to open the file: %v", err)

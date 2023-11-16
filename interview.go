@@ -119,7 +119,8 @@ type DomainCount struct {
 	Count  int
 }
 
-func sortAndSave(domainCounts map[string]int, filename string) error {
+// sortDomains sorts the domain counts and returns them in a sorted slice of DomainCount.
+func sortDomains(domainCounts map[string]int) []DomainCount {
 	var counts []DomainCount
 	for domain, count := range domainCounts {
 			counts = append(counts, DomainCount{Domain: domain, Count: count})
@@ -129,43 +130,51 @@ func sortAndSave(domainCounts map[string]int, filename string) error {
 			return counts[i].Count > counts[j].Count // desc order
 	})
 
-	file, err := os.Create(filename)
-	if err != nil {
-		return fmt.Errorf("error creating output file: %w", err)
-	}
-	defer file.Close()
-
-	buffer := bufio.NewWriter(file)
-	writer := csv.NewWriter(buffer)
-	defer writer.Flush()
-
-	for _, dc := range counts {
-			if err := writer.Write([]string{dc.Domain, strconv.Itoa(dc.Count)}); err != nil {
-					return err
-			}
-	}
-	
-	if err := buffer.Flush(); err != nil {
-		return fmt.Errorf("error flushing buffer to file: %w", err)
-	}
-
-	return nil
+	return counts
 }
 
-func ProcessCustomers(inputFile, outputFile string) error {
+// saveToFile saves the sorted domain counts to a specified CSV file.
+func saveToFile(sortedDomains []DomainCount, filename string) error {
+    file, err := os.Create(filename)
+    if err != nil {
+        return fmt.Errorf("error creating output file: %w", err)
+    }
+    defer file.Close()
+
+    buffer := bufio.NewWriter(file)
+    writer := csv.NewWriter(buffer)
+    defer writer.Flush()
+
+    for _, dc := range sortedDomains {
+        if err := writer.Write([]string{dc.Domain, strconv.Itoa(dc.Count)}); err != nil {
+            return err
+        }
+    }
+
+    return buffer.Flush()
+}
+
+// ProcessCustomers reads the CSV, counts and sorts email domains.
+// If an outputFile is provided, it saves the result to the file.
+func ProcessCustomers(inputFile string, outputFile ...string) ([]DomainCount, error) {
 	records, err := readCSV(inputFile)
 	if err != nil {
-			return fmt.Errorf("failed to read CSV: %w", err)
+			return nil, fmt.Errorf("failed to read CSV: %w", err)
 	}
 
 	domainCounts, err := countEmailDomains(records)
 	if err != nil {
-			return fmt.Errorf("failed to count email domains: %w", err)
+			return nil, fmt.Errorf("failed to count email domains: %w", err)
 	}
 
-	if err := sortAndSave(domainCounts, outputFile); err != nil {
-			return fmt.Errorf("failed to sort and save domains: %w", err)
+	sortedDomains := sortDomains(domainCounts)
+
+	// Save to file if an outputFile name is provided
+	if len(outputFile) > 0 {
+			if err := saveToFile(sortedDomains, outputFile[0]); err != nil {
+					return sortedDomains, fmt.Errorf("failed to save domains: %w", err)
+			}
 	}
 
-	return nil
+	return sortedDomains, nil
 }
