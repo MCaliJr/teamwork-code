@@ -17,45 +17,55 @@ import (
 	"sync"
 )
 
-// read data from a CSV file using concurrency for faster read time
+// readCSV reads data from a CSV file using concurrency.
 func readCSV(filename string) ([][]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer file.Close()
 
+	return processCSVLines(file)
+}
+
+// processCSVLines processes lines from an open file concurrently.
+func processCSVLines(file *os.File) ([][]string, error) {
 	var records [][]string
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+			data := scanner.Text()
 			wg.Add(1)
-			go func(data string) {
-					defer wg.Done()
-					reader := csv.NewReader(strings.NewReader(data))
-					record, err := reader.Read()
-					if err != nil {
-							// TODO handle / log error
-							return
-					}
-
-					mutex.Lock()
-					records = append(records, record)
-					mutex.Unlock()
-			}(scanner.Text())
+			go processLine(data, &records, &mutex, &wg)
 	}
 
 	if err := scanner.Err(); err != nil {
-			return nil, fmt.Errorf("scanner error in readCSV: %w", err)
+			return nil, fmt.Errorf("scanner error: %w", err)
 	}
 
 	wg.Wait()
 	return records, nil
 }
 
-// count email domains using concurrency for faster execution
+// processLine processes a single line of CSV data using goroutine 
+func processLine(data string, records *[][]string, mutex *sync.Mutex, wg *sync.WaitGroup) error {
+	defer wg.Done()
+	reader := csv.NewReader(strings.NewReader(data))
+	record, err := reader.Read()
+	if err != nil {
+			return fmt.Errorf("reader error: %w", err)
+	}
+
+	mutex.Lock()
+	*records = append(*records, record)
+	mutex.Unlock()
+
+	return nil
+}
+
+// countEmailDomains uses concurrency for faster execution
 func countEmailDomains(records [][]string) (map[string]int, error) {
 	if len(records) == 0 {
 			return nil, errors.New("no records provided")
@@ -94,7 +104,7 @@ func countEmailDomains(records [][]string) (map[string]int, error) {
 	return domainCounts, nil
 }
 
-// identify the index of email column
+// findEmailColumn identifies index of the "email" column
 func findEmailColumn(record []string) (int, error) {
 	for i, field := range record {
 			if strings.Contains(field, "@") || strings.ToLower(field) == "email" {
